@@ -10,7 +10,7 @@
 
 ## 🤔 Why this project exists
 
-You have a PC that is always on. It runs a couple of scripts: a Telegram bot, a scraper, something that pays a bill or renews a booking. Everything works, so you forget about it.
+You have a PC that is always on. It runs a couple of scripts: a Telegram bot, a scraper, a job that sends a daily report or keeps a backup in sync. Everything works, so you forget about it.
 
 Then, one day — after 100 days, maybe more — you reboot it. And it **does not start any more**.
 
@@ -135,7 +135,7 @@ Telegram is the most useful channel: a message on your phone, wherever you are, 
 3. Look for `"chat":{"id":` in the page. The number after it is your **chat id**:
 
    ```json
-   "chat":{"id":123456789,"first_name":"Francesco","type":"private"}
+   "chat":{"id":123456789,"first_name":"Alex","type":"private"}
    ```
 
    If the page shows only `{"ok":true,"result":[]}`, send another message to your bot and reload.
@@ -170,7 +170,7 @@ Within a few seconds you get: *"🧪 Test alert from Always on Mint. If you read
 | The weekly reboot is cancelled because it is not safe | ⛔ *Weekly reboot CANCELLED*, with the reason |
 | The PC starts after the weekly reboot / after an update / after you switched it off | 🔄 / 🔌 *I am up again* |
 | The PC restarted **by itself** (power cut, freeze, crash) | ⚠️ *I restarted BY MYSELF* |
-| A script started with `aom run` fails or hangs | ⛔ *taxes failed*, with its last lines |
+| A script started with `aom run` fails or hangs | ⛔ *report failed*, with its last lines |
 | The backup could not be done or copied | ⛔ / ⚠️ *Backup* |
 
 ### Tips
@@ -283,31 +283,31 @@ It needs no `sudo`. The exit code of your command is returned unchanged. When it
 Before:
 
 ```
-0 9 * * * /home/me/bots/taxes/venv/bin/python /home/me/bots/taxes/main.py
+0 9 * * * /home/me/bots/report/venv/bin/python /home/me/bots/report/main.py
 ```
 
 After:
 
 ```
-0 9 * * * /usr/local/bin/aom run --name taxes --ping https://hc-ping.com/yyyy --minutes 30 -- /home/me/bots/taxes/venv/bin/python /home/me/bots/taxes/main.py
+0 9 * * * /usr/local/bin/aom run --name report --ping https://hc-ping.com/yyyy --minutes 30 -- /home/me/bots/report/venv/bin/python /home/me/bots/report/main.py
 ```
 
 On healthchecks.io, create the script's check with **Schedule → Cron**, the same expression (`0 9 * * *`), your time zone, and a grace time of 30–60 minutes.
 
 ### As a service that is always running (Telegram bots, servers...)
 
-For a bot that must run all the time, a **systemd service** is better: it **restarts by itself** if it crashes, and starts at boot. For example `/etc/systemd/system/bot-taxes.service`:
+For a bot that must run all the time, a **systemd service** is better: it **restarts by itself** if it crashes, and starts at boot. For example `/etc/systemd/system/bot-report.service`:
 
 ```ini
 [Unit]
-Description=Taxes bot
+Description=Report bot
 Wants=network-online.target
 After=network-online.target
 
 [Service]
 User=me
-WorkingDirectory=/home/me/bots/taxes
-ExecStart=/home/me/bots/taxes/venv/bin/python main.py
+WorkingDirectory=/home/me/bots/report
+ExecStart=/home/me/bots/report/venv/bin/python main.py
 Restart=always
 RestartSec=30
 
@@ -317,7 +317,7 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now bot-taxes
+sudo systemctl enable --now bot-report
 ```
 
 If it keeps crashing, the hourly check reports it among the **failed services**.
@@ -327,7 +327,7 @@ If it keeps crashing, the hourly check reports it among the **failed services**.
 - **One virtual environment per bot**: `python3 -m venv venv && venv/bin/pip install -r requirements.txt`. **Never `sudo pip install`**: it mixes your packages with the system's and can break Linux Mint's own tools. The check tells you if there are any.
 - **Logs must not grow forever**: if your bot writes its own log, rotate it (`logging.handlers.RotatingFileHandler`).
 
-> For things that really matter (a payment, a deadline), keep a **calendar reminder** too. No automation is worth more than a glance.
+> For things that really matter (a deadline, a job that must not be skipped), keep a **calendar reminder** too. No automation is worth more than a glance.
 
 ---
 

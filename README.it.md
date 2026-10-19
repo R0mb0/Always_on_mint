@@ -10,7 +10,7 @@
 
 ## 🤔 Perché esiste questo progetto
 
-Hai un PC sempre acceso. Fa girare un paio di script: un bot Telegram, uno scraper, qualcosa che paga una bolletta o rinnova una prenotazione. Tutto funziona, quindi te ne dimentichi.
+Hai un PC sempre acceso. Fa girare un paio di script: un bot Telegram, uno scraper, un lavoro che manda un rapporto ogni giorno o tiene allineato un backup. Tutto funziona, quindi te ne dimentichi.
 
 Poi un giorno, dopo 100 giorni o anche più, lo riavvii. E **non parte più**.
 
@@ -135,7 +135,7 @@ Telegram è il canale più utile: un messaggio sul telefono, ovunque tu sia, poc
 3. Cerca `"chat":{"id":` nella pagina. Il numero che segue è il tuo **chat id**:
 
    ```json
-   "chat":{"id":123456789,"first_name":"Francesco","type":"private"}
+   "chat":{"id":123456789,"first_name":"Alex","type":"private"}
    ```
 
    Se la pagina mostra solo `{"ok":true,"result":[]}`, manda un altro messaggio al bot e ricarica.
@@ -170,7 +170,7 @@ In pochi secondi ti arriva: *"🧪 Avviso di prova da Always on Mint. Se leggi q
 | Il riavvio settimanale viene annullato perché non è sicuro | ⛔ *Riavvio settimanale ANNULLATO*, con il motivo |
 | Il PC riparte dopo il riavvio settimanale / dopo un aggiornamento / dopo che l'hai spento tu | 🔄 / 🔌 *Sono di nuovo acceso* |
 | Il PC si è riavviato **da solo** (corrente, blocco, crash) | ⚠️ *Mi sono riavviato DA SOLO* |
-| Uno script lanciato con `aom run` fallisce o si blocca | ⛔ *tasse non è andato a buon fine*, con le ultime righe |
+| Uno script lanciato con `aom run` fallisce o si blocca | ⛔ *report non è andato a buon fine*, con le ultime righe |
 | Il backup non si è potuto fare o copiare | ⛔ / ⚠️ *Backup* |
 
 ### Consigli
@@ -283,31 +283,31 @@ Non serve `sudo`. Il codice d'uscita del tuo comando viene restituito uguale. Qu
 Prima:
 
 ```
-0 9 * * * /home/io/bot/tasse/venv/bin/python /home/io/bot/tasse/main.py
+0 9 * * * /home/io/bot/report/venv/bin/python /home/io/bot/report/main.py
 ```
 
 Dopo:
 
 ```
-0 9 * * * /usr/local/bin/aom run --name tasse --ping https://hc-ping.com/yyyy --minutes 30 -- /home/io/bot/tasse/venv/bin/python /home/io/bot/tasse/main.py
+0 9 * * * /usr/local/bin/aom run --name report --ping https://hc-ping.com/yyyy --minutes 30 -- /home/io/bot/report/venv/bin/python /home/io/bot/report/main.py
 ```
 
 Su healthchecks.io crea il check dello script con **Schedule → Cron**, la stessa espressione (`0 9 * * *`), il tuo fuso orario e una tolleranza di 30–60 minuti.
 
 ### Come servizio sempre acceso (bot Telegram, server...)
 
-Per un bot che deve girare sempre è meglio un **servizio systemd**: **riparte da solo** se cade, e parte all'accensione. Per esempio `/etc/systemd/system/bot-tasse.service`:
+Per un bot che deve girare sempre è meglio un **servizio systemd**: **riparte da solo** se cade, e parte all'accensione. Per esempio `/etc/systemd/system/bot-report.service`:
 
 ```ini
 [Unit]
-Description=Bot delle tasse
+Description=Bot dei report
 Wants=network-online.target
 After=network-online.target
 
 [Service]
 User=io
-WorkingDirectory=/home/io/bot/tasse
-ExecStart=/home/io/bot/tasse/venv/bin/python main.py
+WorkingDirectory=/home/io/bot/report
+ExecStart=/home/io/bot/report/venv/bin/python main.py
 Restart=always
 RestartSec=30
 
@@ -317,7 +317,7 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now bot-tasse
+sudo systemctl enable --now bot-report
 ```
 
 Se continua a cadere, il controllo orario lo segnala tra i **servizi falliti**.
@@ -327,7 +327,7 @@ Se continua a cadere, il controllo orario lo segnala tra i **servizi falliti**.
 - **Un ambiente virtuale per ogni bot**: `python3 -m venv venv && venv/bin/pip install -r requirements.txt`. **Mai `sudo pip install`**: mescola i tuoi pacchetti con quelli del sistema e può rompere gli strumenti di Linux Mint. Il controllo ti dice se ce ne sono.
 - **I log non devono crescere all'infinito**: se il tuo bot scrive un suo log, fallo ruotare (`logging.handlers.RotatingFileHandler`).
 
-> Per le cose che contano davvero (un pagamento, una scadenza) tieni anche un **promemoria in calendario**. Nessun automatismo vale un'occhiata.
+> Per le cose che contano davvero (una scadenza, un lavoro che non deve saltare) tieni anche un **promemoria in calendario**. Nessun automatismo vale un'occhiata.
 
 ---
 

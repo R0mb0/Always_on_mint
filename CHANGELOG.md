@@ -14,5 +14,6 @@ First public version.
 - Desktop alerts that arrive while nobody is logged in (e.g. "I restarted by myself" at boot) wait until someone is there to hear them.
 - Never sleeps, logs with a ceiling, kernel panic auto-reboot, hardware watchdog, earlyoom, visible boot menu, no silent automatic updates.
 - Messages in English and Italian.
+- Website (GitHub Pages, `docs/`): the README in English or Italian, chosen from the browser language, with light and dark theme.
 - `IGNORE_SERVICES`: failed services not to report (default: `casper-md5check.service`, a harmless leftover of the Linux Mint installer).
 - Fixed before release: the SMART check mistook the `WHEN_FAILED` column of the attribute table for a failing disk.

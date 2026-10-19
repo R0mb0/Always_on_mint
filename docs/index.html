@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Always on Mint</title>
+<meta name="description" content="A small, dependency-free Bash toolkit that keeps an always-on Linux Mint, Ubuntu or Debian PC healthy for months: hourly checks, weekly cleanup, backup and careful reboot, alerts on Telegram, healthchecks.io and the PC's own speakers.">
+<meta property="og:title" content="Always on Mint">
+<meta property="og:description" content="Keeps an always-on Linux Mint, Ubuntu or Debian PC healthy for months, and tells you when something is wrong.">
+<meta property="og:type" content="website">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+  // theme and language before the first paint, so the page never flashes
+  (function () {
+    var get = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    var t = get('aom-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    var q = new URLSearchParams(location.search).get('lang');
+    var l = (q === 'it' || q === 'en') ? q : get('aom-lang');
+    if (l !== 'it' && l !== 'en') l = /^it\b/i.test(navigator.language || '') ? 'it' : 'en';
+    document.documentElement.lang = l;
+  })();
+</script>
+<style>
+:root {
+  --bg: #f3f7f2;
+  --bg-2: #e8f0e6;
+  --surface: #ffffff;
+  --ink: #14231b;
+  --muted: #52645a;
+  --line: #d8e3d7;
+  --mint: #2f7d3a;
+  --mint-ink: #ffffff;
+  --leaf: #9bd36a;
+  --leaf-soft: #e3f3d4;
+  --warn: #9a6500;
+  --code-bg: #14231b;
+  --code-ink: #dcebdc;
+  --code-dim: #8fa996;
+  --shadow: 0 1px 0 rgba(20, 35, 27, .04), 0 10px 30px -18px rgba(20, 35, 27, .35);
+  --r-xl: 28px; --r-lg: 20px; --r-md: 14px; --r-sm: 10px;
+  --display: "Bricolage Grotesque", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "DejaVu Sans Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1714; --bg-2: #13201b; --surface: #16221d; --ink: #e3eee6; --muted: #9aafa2;
+    --line: #273a31; --mint: #8acb66; --mint-ink: #0f1714; --leaf: #8acb66; --leaf-soft: #1d3324;
+    --warn: #f0b85a; --code-bg: #0a110e; --code-ink: #d6e8d9; --code-dim: #7d978a;
+    --shadow: 0 1px 0 rgba(0,0,0,.2), 0 14px 34px -20px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1714; --bg-2: #13201b; --surface: #16221d; --ink: #e3eee6; --muted: #9aafa2;
+  --line: #273a31; --mint: #8acb66; --mint-ink: #0f1714; --leaf: #8acb66; --leaf-soft: #1d3324;
+  --warn: #f0b85a; --code-bg: #0a110e; --code-ink: #d6e8d9; --code-dim: #7d978a;
+  --shadow: 0 1px 0 rgba(0,0,0,.2), 0 14px 34px -20px rgba(0,0,0,.8);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 96px; -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 17px/1.62 var(--body); overflow-x: hidden;
+}
+a { color: var(--mint); text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
+a:hover { text-decoration-thickness: 2.5px; }
+:focus-visible { outline: 3px solid var(--leaf); outline-offset: 2px; border-radius: 8px; }
+code, pre { font-family: var(--mono); }
+
+/* ---------- header ---------- */
+.top {
+  position: sticky; top: 12px; z-index: 20; margin: 12px auto 0; width: min(1180px, calc(100% - 24px));
+  display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 18px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(1.3); -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  border: 1px solid var(--line); border-radius: 999px; box-shadow: var(--shadow);
+}
+.brand { display: flex; align-items: center; gap: 10px; font: 700 18px/1 var(--display); color: var(--ink); text-decoration: none; margin-right: auto; white-space: nowrap; }
+.brand .dot { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; background: var(--leaf-soft); font-size: 16px; }
+.seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--bg-2); border-radius: 999px; border: 1px solid var(--line); }
+.seg button {
+  font: 600 13.5px/1 var(--body); color: var(--muted); background: transparent; border: 0; cursor: pointer;
+  padding: 8px 12px; border-radius: 999px; min-width: 38px; display: inline-flex; align-items: center; gap: 6px; justify-content: center;
+}
+.seg button[aria-pressed="true"] { background: var(--mint); color: var(--mint-ink); box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+.seg svg { width: 16px; height: 16px; }
+.gh {
+  display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font: 700 14px/1 var(--body);
+  background: var(--ink); color: var(--bg); padding: 11px 16px; border-radius: 999px;
+}
+.gh svg { width: 18px; height: 18px; }
+@media (max-width: 720px) {
+  .top { padding-left: 12px; gap: 6px; }
+  .brand .name, .gh .label, .seg .label { display: none; }
+  .gh { padding: 10px; }
+  .seg button { padding: 8px 9px; min-width: 32px; }
+}
+
+/* ---------- hero ---------- */
+.hero { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 72px 0 40px; display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; }
+.hero h1 {
+  font: 800 clamp(48px, 8.5vw, 104px)/.92 var(--display); letter-spacing: -.035em; margin: 0 0 24px;
+}
+.hero h1 .l2 { display: block; color: var(--mint); }
+.hero .lead { font-size: 19px; line-height: 1.6; color: var(--ink); max-width: 60ch; margin: 0 0 18px; }
+.hero .lead strong { font-weight: 700; }
+.hero .extra { margin: 0 0 18px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.hero .extra img { max-width: 100%; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 14px 22px; border-radius: 999px;
+  font: 700 16px/1 var(--body); text-decoration: none; border: 1.5px solid var(--line); color: var(--ink); background: var(--surface);
+}
+.btn.primary { background: var(--mint); color: var(--mint-ink); border-color: var(--mint); }
+
+/* the uptime board: the one moving thing on the page */
+.board {
+  background: var(--code-bg); color: var(--code-ink); border-radius: var(--r-xl); padding: 22px;
+  box-shadow: 0 30px 60px -30px rgba(10, 30, 20, .55); position: relative; overflow: hidden;
+}
+.board .bar { display: flex; gap: 7px; margin-bottom: 18px; }
+.board .bar i { width: 11px; height: 11px; border-radius: 50%; background: #3b4d44; }
+.board .bar i:first-child { background: #8acb66; }
+.uptime { display: flex; align-items: baseline; gap: 12px; margin: 0 0 6px; font-family: var(--mono); }
+.uptime b { font: 600 clamp(40px, 6vw, 60px)/1 var(--mono); color: #b6e78f; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.uptime span { color: var(--code-dim); font-size: 14px; }
+.pulse { width: 100%; height: 70px; display: block; margin: 8px 0 12px; }
+.pulse path { fill: none; stroke: #8acb66; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 900; stroke-dashoffset: 900; animation: draw 2.4s ease-out .3s forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.weeks { display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(7, auto); grid-auto-flow: column; gap: 4px; margin-bottom: 16px; }
+.weeks i { aspect-ratio: 1; border-radius: 5px; background: #20302a; }
+.weeks i.r { background: #8acb66; }
+.board pre { margin: 0; background: #ffffff0d; border-radius: var(--r-md); padding: 14px 16px; font-size: 13.5px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+.board pre .p { color: #8acb66; user-select: none; }
+.board .legend { color: var(--code-dim); font-size: 13px; margin: 0 0 14px; font-family: var(--mono); }
+@media (max-width: 920px) { .hero { grid-template-columns: 1fr; padding-top: 48px; gap: 32px; } }
+
+/* ---------- layout ---------- */
+.layout { width: min(1180px, calc(100% - 32px)); margin: 0 auto 80px; display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 48px; align-items: start; }
+.toc { position: sticky; top: 92px; max-height: calc(100vh - 110px); overflow: auto; padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); }
+.toc summary { display: none; }
+.toc ol { list-style: none; margin: 0; padding: 0; }
+.toc a { display: flex; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; color: var(--muted); text-decoration: none; font-size: 14.5px; line-height: 1.3; }
+.toc a .e { width: 22px; text-align: center; flex: none; }
+.toc a:hover { background: var(--bg-2); color: var(--ink); }
+.toc a.on { background: var(--leaf-soft); color: var(--ink); font-weight: 700; }
+@media (max-width: 920px) {
+  .layout { grid-template-columns: 1fr; gap: 20px; }
+  .toc { position: static; max-height: none; padding: 0; }
+  .toc summary { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; cursor: pointer; font-weight: 700; list-style: none; }
+  .toc summary::-webkit-details-marker { display: none; }
+  .toc summary::after { content: "+"; font: 600 22px/1 var(--display); color: var(--mint); }
+  .toc[open] summary::after { content: "–"; }
+  .toc ol { padding: 0 8px 8px; }
+}
+
+/* ---------- content ---------- */
+.doc { min-width: 0; }
+.doc section { padding: 8px 0 40px; margin-bottom: 40px; border-bottom: 1px solid var(--line); }
+.doc section:last-child { border-bottom: 0; }
+.doc h2 code { font-size: .7em; }
+.doc h2 { display: flex; align-items: center; gap: 14px; font: 800 clamp(28px, 4vw, 40px)/1.1 var(--display); letter-spacing: -.02em; margin: 0 0 20px; }
+.doc h2 .e { flex: none; width: 54px; height: 54px; border-radius: 18px; display: grid; place-items: center; background: var(--leaf-soft); font-size: 26px; }
+.doc h3 { font: 700 22px/1.25 var(--display); margin: 34px 0 12px; letter-spacing: -.01em; }
+.doc p, .doc li { max-width: 72ch; }
+.doc p { margin: 0 0 16px; }
+.doc ul, .doc ol { padding-left: 1.3em; margin: 0 0 18px; }
+.doc li { margin: 6px 0; }
+.doc li::marker { color: var(--mint); font-weight: 700; }
+.doc :not(pre) > code { font-size: .86em; background: var(--bg-2); border: 1px solid var(--line); padding: .1em .42em; border-radius: 7px; word-break: break-word; }
+.doc blockquote { margin: 18px 0; padding: 14px 18px 14px 20px; background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--leaf); border-radius: var(--r-md); }
+.doc blockquote p:last-child { margin-bottom: 0; }
+.doc img { max-width: 100%; border-radius: var(--r-md); }
+
+/* the feature list as a grid of tiles */
+.doc ul.tiles { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.doc ul.tiles li { max-width: none; margin: 0; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); font-size: 15.5px; line-height: 1.55; }
+.doc ul.tiles li > strong:first-child { display: block; font: 700 17px/1.3 var(--display); margin-bottom: 4px; color: var(--ink); }
+
+/* steps (ordered lists) */
+.doc ol { counter-reset: s; list-style: none; padding-left: 0; }
+.doc ol > li { counter-increment: s; position: relative; padding-left: 46px; margin: 14px 0; }
+.doc ol > li::before {
+  content: counter(s); position: absolute; left: 0; top: -1px; width: 32px; height: 32px; border-radius: 11px;
+  display: grid; place-items: center; background: var(--mint); color: var(--mint-ink); font: 700 15px/1 var(--display);
+}
+
+/* code */
+.code { position: relative; margin: 12px 0 18px; }
+.code pre {
+  margin: 0; background: var(--code-bg); color: var(--code-ink); border-radius: var(--r-md);
+  padding: 16px 18px; padding-right: 64px; overflow-x: auto; font-size: 14px; line-height: 1.65;
+}
+.code pre .c { color: var(--code-dim); }
+.code .copy {
+  position: absolute; top: 9px; right: 9px; border: 0; cursor: pointer; border-radius: 9px;
+  background: #ffffff14; color: var(--code-ink); font: 600 12.5px/1 var(--body); padding: 7px 10px;
+}
+.code .copy:hover { background: #ffffff26; }
+
+/* tables */
+.table { overflow-x: auto; margin: 12px 0 20px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+.table table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.5; }
+.table th { text-align: left; font: 700 14px/1.3 var(--body); color: var(--muted); background: var(--bg-2); padding: 11px 14px; }
+.table td { padding: 11px 14px; border-top: 1px solid var(--line); vertical-align: top; }
+.table td:first-child { min-width: 150px; }
+@media (max-width: 720px) { .table table { min-width: 620px; font-size: 14.5px; } .table td:first-child code { white-space: nowrap; word-break: normal; } }
+
+.state { padding: 40px; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
+footer { width: min(1180px, calc(100% - 32px)); margin: 0 auto 40px; padding: 24px; border-radius: var(--r-lg); background: var(--bg-2); color: var(--muted); font-size: 14.5px; display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="#"><span class="dot" aria-hidden="true">🛡️</span><span class="name">Always on Mint</span></a>
+  <div class="seg" role="group" id="langs" aria-label="Language">
+    <button type="button" data-lang="en" lang="en">EN</button>
+    <button type="button" data-lang="it" lang="it">IT</button>
+  </div>
+  <div class="seg" role="group" id="themes">
+    <button type="button" data-theme="auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/></svg><span class="label" data-t="auto"></span></button>
+    <button type="button" data-theme="light"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+    <button type="button" data-theme="dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
+  </div>
+  <a class="gh" href="https://github.com/R0mb0/Always_on_mint"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg><span class="label">GitHub</span></a>
+</header>
+
+<main>
+  <div class="hero">
+    <div id="intro">
+      <h1>Always<span class="l2">on Mint</span></h1>
+      <p class="lead" id="lead"></p>
+      <div class="extra" id="extra"></div>
+      <div class="cta">
+        <a class="btn primary" id="cta-start" href="#"></a>
+        <a class="btn" href="https://github.com/R0mb0/Always_on_mint" data-t="source"></a>
+      </div>
+    </div>
+    <div class="board" aria-hidden="true">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <p class="uptime"><b id="days">100</b><span data-t="days"></span></p>
+      <svg class="pulse" viewBox="0 0 400 70" preserveAspectRatio="none"><path d="M0 40 H70 L82 40 L92 14 L104 60 L114 30 L122 40 H200 L212 40 L222 14 L234 60 L244 30 L252 40 H330 L342 40 L352 14 L364 60 L374 30 L382 40 H400"/></svg>
+      <p class="legend" data-t="weeks"></p>
+      <div class="weeks" id="weeks"></div>
+      <pre><span class="p">$ </span>sudo bash install.sh
+<span class="p">$ </span>sudo aom check
+<span class="p">$ </span>sudo aom reboot --dry-run</pre>
+    </div>
+  </div>
+
+  <div class="layout">
+    <details class="toc" id="toc" open>
+      <summary data-t="contents"></summary>
+      <ol id="toc-list"></ol>
+    </details>
+    <article class="doc" id="doc">
+      <div class="state" id="state"></div>
+      <noscript><div class="state">This page needs JavaScript. Read the documentation on <a href="https://github.com/R0mb0/Always_on_mint">GitHub</a>.</div></noscript>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <span data-t="footer"></span>
+  <a href="https://github.com/R0mb0/Always_on_mint">github.com/R0mb0/Always_on_mint</a>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+  var REPO = 'https://github.com/R0mb0/Always_on_mint';
+  var BRANCH = 'main';
+  var RAW = 'https://raw.githubusercontent.com/R0mb0/Always_on_mint/' + BRANCH + '/';
+  // when the repository is served locally (python3 -m http.server from its folder), read the READMEs next to docs/
+  var LOCAL = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+  var BASE = LOCAL ? new URL('../', location.href).href : RAW;
+  var FILES = { en: 'README.md', it: 'README.it.md' };
+
+  var UI = {
+    en: { auto: 'Auto', light: 'Light theme', dark: 'Dark theme', autoT: 'Theme follows the system', contents: 'Contents', source: 'Source code on GitHub',
+          start: 'Quick start', days: 'days always on', weeks: 'one careful reboot a week, only when it is safe',
+          loading: 'Loading the documentation…', copy: 'Copy', copied: 'Copied',
+          failed: 'The documentation could not be loaded. Read it on GitHub: ', footer: 'Released under the MIT License.' },
+    it: { auto: 'Auto', light: 'Tema chiaro', dark: 'Tema scuro', autoT: 'Il tema segue il sistema', contents: 'Indice', source: 'Codice sorgente su GitHub',
+          start: 'Partenza veloce', days: 'giorni sempre acceso', weeks: 'un riavvio prudente a settimana, solo quando è sicuro',
+          loading: 'Carico la documentazione…', copy: 'Copia', copied: 'Copiato',
+          failed: 'Non sono riuscito a caricare la documentazione. Leggila su GitHub: ', footer: 'Rilasciato con licenza MIT.' }
+  };
+
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+  };
+  var root = document.documentElement;
+  var lang = root.lang === 'it' ? 'it' : 'en';
+  var cache = {};
+
+  /* ---------------- a small Markdown renderer (GitHub flavour, what the READMEs use) ---------------- */
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+  function inline(src) {
+    var keep = [];
+    var put = function (html) { keep.push(html); return '\u0000' + (keep.length - 1) + '\u0000'; };
+    var s = src;
+    s = s.replace(/(`+)([\s\S]*?[^`])\1(?!`)/g, function (_, t, c) { return put('<code>' + esc(c.replace(/^ (.*) $/, '$1')) + '</code>'); });
+    s = s.replace(/<!--[\s\S]*?-->/g, '');
+    s = s.replace(/<\/?[a-zA-Z][^<>]*>/g, function (t) { return put(t); });                  // inline HTML (badges, images)
+    s = s.replace(/!\[([^\]]*)\]\(\s*<?([^)\s>]+)>?(?:\s+"([^"]*)")?\s*\)/g, function (_, alt, url, title) {
+      return put('<img src="' + esc(url) + '" alt="' + esc(alt) + '"' + (title ? ' title="' + esc(title) + '"' : '') + ' loading="lazy">');
+    });
+    s = s.replace(/\[((?:[^\[\]]|\u0000\d+\u0000)+)\]\(\s*<?([^)\s>]+)>?(?:\s+"([^"]*)")?\s*\)/g, function (_, text, url) {
+      return put('<a href="' + esc(url) + '">') + text + put('</a>');
+    });
+    s = s.replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]/g, function (u) { return put('<a href="' + esc(u) + '">' + esc(u) + '</a>'); });
+    s = esc(s);
+    s = s.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>').replace(/__([^_]+?)__/g, '<strong>$1</strong>');
+    s = s.replace(/(^|[^*\w])\*(?!\s)([^*]+?)\*(?!\w)/g, '$1<em>$2</em>').replace(/(^|[^\w])_(?!\s)([^_]+?)_(?!\w)/g, '$1<em>$2</em>');
+    s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+    s = s.replace(/ {2,}\n|\\\n/g, '<br>');
+    for (var i = 0; i < 4 && s.indexOf('\u0000') >= 0; i++) s = s.replace(/\u0000(\d+)\u0000/g, function (_, n) { return keep[+n]; });
+    return s;
+  }
+
+  function splitRow(line) {
+    var cells = [], cur = '', tick = false;
+    line = line.trim().replace(/^\|/, '').replace(/\|$/, '');
+    for (var i = 0; i < line.length; i++) {
+      var ch = line[i];
+      if (ch === '\\' && line[i + 1] === '|') { cur += '|'; i++; continue; }
+      if (ch === '`') tick = !tick;
+      if (ch === '|' && !tick) { cells.push(cur.trim()); cur = ''; } else cur += ch;
+    }
+    cells.push(cur.trim());
+    return cells;
+  }
+
+  var RE = {
+    fence: /^ {0,3}(```+|~~~+)\s*([\w+-]*)/,
+    head: /^ {0,3}(#{1,6})\s+(.*?)\s*#*\s*$/,
+    hr: /^ {0,3}([-*_])(\s*\1){2,}\s*$/,
+    quote: /^ {0,3}>\s?/,
+    item: /^( {0,3})([-*+]|\d{1,9}[.)])(\s+)(.*)$/,
+    html: /^ {0,3}<(\/?[a-zA-Z][\w-]*|!--)/,
+    tsep: /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/
+  };
+
+  function blocks(text) {
+    var lines = text.replace(/\r\n?/g, '\n').replace(/\t/g, '    ').split('\n');
+    var out = [], i = 0, m;
+    var blank = function (l) { return /^\s*$/.test(l); };
+    var startsBlock = function (l, next) {
+      return RE.fence.test(l) || RE.head.test(l) || RE.hr.test(l) || RE.quote.test(l) || RE.item.test(l) || RE.html.test(l) ||
+        (/\|/.test(l) && next !== undefined && RE.tsep.test(next));
+    };
+    while (i < lines.length) {
+      var l = lines[i];
+      if (blank(l)) { i++; continue; }
+      if ((m = l.match(RE.fence))) {
+        var fence = m[1], code = [], ind = l.match(/^ */)[0].length;
+        i++;
+        while (i < lines.length && !new RegExp('^ {0,3}' + fence[0] + '{' + fence.length + ',}\\s*$').test(lines[i])) {
+          code.push(lines[i].replace(new RegExp('^ {0,' + ind + '}'), '')); i++;
+        }
+        i++;
+        out.push({ t: 'code', lang: m[2], text: code.join('\n') });
+        continue;
+      }
+      if ((m = l.match(RE.head))) { out.push({ t: 'h', level: m[1].length, text: m[2] }); i++; continue; }
+      if (RE.hr.test(l)) { out.push({ t: 'hr' }); i++; continue; }
+      if (/^\s*<!--/.test(l)) {                               // HTML comments (e.g. the badges placeholder)
+        while (i < lines.length && lines[i].indexOf('-->') < 0) i++;
+        i++; continue;
+      }
+      if (RE.html.test(l)) {
+        var h = [];
+        while (i < lines.length && !blank(lines[i])) { h.push(lines[i]); i++; }
+        out.push({ t: 'html', text: h.join('\n') });
+        continue;
+      }
+      if (RE.quote.test(l)) {
+        var q = [];
+        while (i < lines.length && !blank(lines[i]) && (RE.quote.test(lines[i]) || q.length)) {
+          if (!RE.quote.test(lines[i]) && startsBlock(lines[i], lines[i + 1])) break;
+          q.push(lines[i].replace(RE.quote, '')); i++;
+        }
+        out.push({ t: 'quote', children: blocks(q.join('\n')) });
+        continue;
+      }
+      if (/\|/.test(l) && i + 1 < lines.length && RE.tsep.test(lines[i + 1])) {
+        var head = splitRow(l), align = splitRow(lines[i + 1]).map(function (c) {
+          return /^:-+:$/.test(c) ? 'center' : /-+:$/.test(c) ? 'right' : '';
+        }), rows = [];
+        i += 2;
+        while (i < lines.length && !blank(lines[i]) && /\|/.test(lines[i])) { rows.push(splitRow(lines[i])); i++; }
+        out.push({ t: 'table', head: head, align: align, rows: rows });
+        continue;
+      }
+      if ((m = l.match(RE.item))) {
+        var ordered = /\d/.test(m[2]), start = ordered ? parseInt(m[2], 10) : 1, items = [], loose = false;
+        while (i < lines.length && (m = lines[i].match(RE.item)) && (/\d/.test(m[2]) === ordered)) {
+          var pad = m[1].length + m[2].length + Math.min(m[3].length, 4), body = [m[4]], sawBlank = false;
+          i++;
+          while (i < lines.length) {
+            var n = lines[i];
+            if (blank(n)) { body.push(''); sawBlank = true; i++; continue; }
+            var indent = n.match(/^ */)[0].length;
+            if (indent >= pad) { body.push(n.slice(pad)); if (sawBlank) loose = true; sawBlank = false; i++; continue; }
+            if (!sawBlank && !startsBlock(n, lines[i + 1])) { body.push(n.trim()); i++; continue; }  // lazy continuation
+            break;
+          }
+          while (body.length && body[body.length - 1] === '') body.pop();
+          items.push(body.join('\n'));
+          if (sawBlank && i < lines.length && RE.item.test(lines[i])) loose = true;
+        }
+        out.push({ t: 'list', ordered: ordered, start: start, loose: loose, items: items.map(blocks) });
+        continue;
+      }
+      var p = [];
+      while (i < lines.length && !blank(lines[i]) && (!p.length || !startsBlock(lines[i], lines[i + 1]))) { p.push(lines[i]); i++; }
+      out.push({ t: 'p', text: p.join('\n') });
+    }
+    return out;
+  }
+
+  function html(bs, tight) {
+    return bs.map(function (b) {
+      switch (b.t) {
+        case 'h': return '<h' + b.level + '>' + inline(b.text) + '</h' + b.level + '>';
+        case 'hr': return '<hr>';
+        case 'p': return tight ? inline(b.text) : '<p>' + inline(b.text) + '</p>';
+        case 'html': return b.text;
+        case 'code': return '<pre data-lang="' + esc(b.lang || '') + '"><code>' + esc(b.text) + '</code></pre>';
+        case 'quote': return '<blockquote>' + html(b.children) + '</blockquote>';
+        case 'table':
+          var cell = function (tag, c, k) { return '<' + tag + (b.align[k] ? ' style="text-align:' + b.align[k] + '"' : '') + '>' + inline(c) + '</' + tag + '>'; };
+          return '<table><thead><tr>' + b.head.map(function (c, k) { return cell('th', c, k); }).join('') + '</tr></thead><tbody>' +
+            b.rows.map(function (r) { return '<tr>' + b.head.map(function (_, k) { return cell('td', r[k] || '', k); }).join('') + '</tr>'; }).join('') +
+            '</tbody></table>';
+        case 'list':
+          var tag = b.ordered ? 'ol' : 'ul';
+          return '<' + tag + (b.ordered && b.start !== 1 ? ' start="' + b.start + '"' : '') + '>' +
+            b.items.map(function (it) { return '<li>' + html(it, !b.loose) + '</li>'; }).join('') + '</' + tag + '>';
+      }
+      return '';
+    }).join('\n');
+  }
+
+  /* ---------------- from Markdown to the page ---------------- */
+  var EMOJI = /^((?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:️|‍|\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Modifier})*)\s*/u;
+  function slug(t) {
+    return t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\p{L}\p{N}\s-]/gu, '')
+      .trim().replace(/\s+/g, '-').replace(/-+/g, '-') || 'section';
+  }
+  function absolute(url, raw) {
+    if (/^(?:[a-z][a-z0-9+.-]*:|#|\/\/)/i.test(url)) return url;
+    var clean = url.replace(/^\.\//, '');
+    return raw ? BASE + clean : REPO + '/blob/' + BRANCH + '/' + clean;
+  }
+
+  function build(md) {
+    var tmp = document.createElement('div');
+    tmp.innerHTML = html(blocks(md));
+
+    // links and pictures that point inside the repository
+    tmp.querySelectorAll('a[href]').forEach(function (a) {
+      var h = a.getAttribute('href');
+      var other = /^(?:\.\/)?README(\.it)?\.md$/i.exec(h);
+      if (other) { a.setAttribute('href', '?lang=' + (other[1] ? 'it' : 'en')); a.setAttribute('data-switch', other[1] ? 'it' : 'en'); return; }
+      a.setAttribute('href', absolute(h, false));
+      if (/^https?:/.test(a.href) && a.host !== location.host) a.setAttribute('rel', 'noopener');
+    });
+    tmp.querySelectorAll('img[src]').forEach(function (img) { img.setAttribute('src', absolute(img.getAttribute('src'), true)); });
+
+    // the part before the first section becomes the introduction
+    var lead = document.getElementById('lead'), extra = document.getElementById('extra');
+    lead.innerHTML = ''; extra.innerHTML = '';
+    var node = tmp.firstElementChild, firstP = true;
+    while (node && node.tagName !== 'H2') {
+      var next = node.nextElementSibling;
+      if (node.tagName === 'P' && firstP) { lead.innerHTML = node.innerHTML; firstP = false; }
+      else if (node.tagName === 'H1' || node.tagName === 'HR' || (node.tagName === 'BLOCKQUOTE' && node.querySelector('[data-switch]'))) { /* shown by the page itself */ }
+      else extra.appendChild(node);
+      node = next;
+    }
+
+    // one <section> per "##"
+    var doc = document.getElementById('doc'), toc = document.getElementById('toc-list');
+    doc.innerHTML = ''; toc.innerHTML = '';
+    var used = {}, sec = null;
+    while (node) {
+      var after = node.nextElementSibling;
+      if (node.tagName === 'H2') {
+        var txt = node.textContent.trim(), m = txt.match(EMOJI), emoji = m ? m[1] : '', label = m ? txt.slice(m[0].length) : txt;
+        var id = slug(label); while (used[id]) id += '-2'; used[id] = 1;
+        sec = document.createElement('section'); sec.id = id;
+        if (emoji && node.firstChild && node.firstChild.nodeType === 3) node.firstChild.textContent = node.firstChild.textContent.replace(EMOJI, '');
+        node.innerHTML = (emoji ? '<span class="e" aria-hidden="true">' + emoji + '</span>' : '') + '<span>' + node.innerHTML + '</span>';
+        sec.appendChild(node); doc.appendChild(sec);
+        var li = document.createElement('li');
+        li.innerHTML = '<a href="#' + id + '"><span class="e" aria-hidden="true">' + emoji + '</span><span>' + esc(label) + '</span></a>';
+        toc.appendChild(li);
+      } else if (node.tagName !== 'HR') {
+        if (node.tagName === 'H3') { var hid = slug(node.textContent.replace(EMOJI, '')); while (used[hid]) hid += '-2'; used[hid] = 1; node.id = hid; }
+        sec.appendChild(node);
+      }
+      node = after;
+    }
+
+    // the feature list (the first list of the section with ✨) as tiles
+    doc.querySelectorAll('section').forEach(function (s) {
+      var h = s.querySelector('h2 .e');
+      if (h && h.textContent.indexOf('✨') === 0) { var ul = s.querySelector(':scope > ul'); if (ul) { ul.className = 'tiles'; ul.querySelectorAll(':scope > li > strong:first-child').forEach(function (b) { var t = b.nextSibling; if (t && t.nodeType === 3) t.textContent = t.textContent.replace(/^\s*:\s*/, ''); }); } }
+    });
+
+    // code blocks with a copy button; comments dimmed
+    doc.querySelectorAll('pre').forEach(function (pre) {
+      var wrap = document.createElement('div'); wrap.className = 'code';
+      pre.parentNode.insertBefore(wrap, pre); wrap.appendChild(pre);
+      var code = pre.querySelector('code'), plain = code.textContent;
+      if (/^(bash|sh|ini|)$/.test(pre.dataset.lang || '')) {
+        code.innerHTML = esc(plain).split('\n').map(function (line) {
+          return line.replace(/(^|\s)(#.*)$/, function (_, sp, c) { return sp + '<span class="c">' + c + '</span>'; });
+        }).join('\n');
+      }
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'copy'; b.textContent = UI[lang].copy;
+      b.addEventListener('click', function () {
+        var done = function () { b.textContent = UI[lang].copied; setTimeout(function () { b.textContent = UI[lang].copy; }, 1600); };
+        if (navigator.clipboard) navigator.clipboard.writeText(plain).then(done, function () {});
+      });
+      wrap.appendChild(b);
+    });
+    doc.querySelectorAll('table').forEach(function (t) {
+      var w = document.createElement('div'); w.className = 'table'; w.tabIndex = 0;
+      t.parentNode.insertBefore(w, t); w.appendChild(t);
+    });
+
+    // "Quick start" button: the section with 🚀
+    var start = Array.prototype.find.call(doc.querySelectorAll('section'), function (s) { return /🚀/.test(s.querySelector('h2').textContent); });
+    var cta = document.getElementById('cta-start');
+    cta.textContent = start ? start.querySelector('h2 span:last-child').textContent : UI[lang].start;
+    cta.setAttribute('href', '#' + (start ? start.id : ''));
+
+    watchToc();
+  }
+
+  var observer;
+  function watchToc() {
+    if (observer) observer.disconnect();
+    if (!('IntersectionObserver' in window)) return;
+    var links = {};
+    document.querySelectorAll('#toc-list a').forEach(function (a) { links[a.getAttribute('href').slice(1)] = a; });
+    observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        Object.keys(links).forEach(function (k) { links[k].classList.toggle('on', k === e.target.id); });
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    document.querySelectorAll('#doc section').forEach(function (s) { observer.observe(s); });
+  }
+
+  /* ---------------- language and theme ---------------- */
+  function texts() {
+    var t = UI[lang];
+    document.querySelectorAll('[data-t]').forEach(function (el) { el.textContent = t[el.getAttribute('data-t')]; });
+    document.getElementById('themes').setAttribute('aria-label', lang === 'it' ? 'Tema' : 'Theme');
+    document.getElementById('langs').setAttribute('aria-label', lang === 'it' ? 'Lingua' : 'Language');
+    document.querySelector('[data-theme="auto"]').title = t.autoT;
+    document.querySelector('[data-theme="light"]').title = document.querySelector('[data-theme="light"]').ariaLabel = t.light;
+    document.querySelector('[data-theme="dark"]').title = document.querySelector('[data-theme="dark"]').ariaLabel = t.dark;
+    document.querySelectorAll('#langs button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
+  }
+
+  function load(l, keepScroll) {
+    lang = l; root.lang = l; texts();
+    var state = document.getElementById('state');
+    var show = function (md) {
+      var y = window.scrollY, hash = location.hash;
+      build(md);
+      if (keepScroll) window.scrollTo(0, y);
+      else if (hash && document.getElementById(decodeURIComponent(hash.slice(1)))) document.getElementById(decodeURIComponent(hash.slice(1))).scrollIntoView();
+    };
+    if (cache[l]) return show(cache[l]);
+    if (state) state.textContent = UI[l].loading;
+    fetch(BASE + FILES[l], { cache: 'no-cache' }).then(function (r) {
+      if (!r.ok) throw new Error(r.status);
+      return r.text();
+    }).then(function (md) { cache[l] = md; if (lang === l) show(md); }).catch(function () {
+      var d = document.getElementById('doc');
+      d.innerHTML = '<div class="state">' + esc(UI[l].failed) + '<a href="' + REPO + '/blob/' + BRANCH + '/' + FILES[l] + '">' + FILES[l] + '</a></div>';
+    });
+  }
+
+  function setLang(l) {
+    store.set('aom-lang', l);
+    var u = new URL(location.href); u.searchParams.delete('lang'); history.replaceState(null, '', u);
+    load(l, true);
+  }
+  document.getElementById('langs').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setLang(b.dataset.lang); });
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('a[data-switch]');
+    if (a) { e.preventDefault(); setLang(a.getAttribute('data-switch')); window.scrollTo(0, 0); }
+  });
+
+  function setTheme(t) {
+    if (t === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', t);
+    store.set('aom-theme', t === 'auto' ? null : t);
+    document.querySelectorAll('#themes button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.theme === t)); });
+  }
+  document.getElementById('themes').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) setTheme(b.dataset.theme); });
+  setTheme(root.getAttribute('data-theme') || 'auto');
+
+  // the uptime board: 15 weeks, a reboot every Sunday
+  var weeks = document.getElementById('weeks');
+  for (var w = 0; w < 105; w++) { var c = document.createElement('i'); if (w % 7 === 6) c.className = 'r'; weeks.appendChild(c); }
+
+  // on phones the contents start closed
+  if (window.matchMedia('(max-width: 920px)').matches) document.getElementById('toc').removeAttribute('open');
+  document.getElementById('toc-list').addEventListener('click', function (e) {
+    if (e.target.closest('a') && window.matchMedia('(max-width: 920px)').matches) document.getElementById('toc').removeAttribute('open');
+  });
+
+  load(lang, false);
+})();
+</script>
+</body>
+</html>

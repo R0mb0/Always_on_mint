@@ -2,7 +2,7 @@
 # aom run — runs a script (a bot) and tells you if it fails or does not start.
 # No sudo needed: put it in front of the command in the crontab or in the bot's service.
 #
-#   aom run --name taxes --ping https://hc-ping.com/xxxx --minutes 30 -- python3 /home/me/bot/taxes.py
+#   aom run --name report --ping https://hc-ping.com/xxxx --minutes 30 -- python3 /home/me/bot/report.py
 #
 #   --name NAME     how it appears in alerts and logs (default: the command's name)
 #   --ping URL      its own check on healthchecks.io: if the script does NOT START on time
