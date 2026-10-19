@@ -1,10 +1,29 @@
+<div align="center">
+
 # 🛡️ Always on Mint
 
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/b7672d4c7aec4ce3aee74dc4e2edcf0a)](https://app.codacy.com/gh/R0mb0/Always_on_mint/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![pages-build-deployment](https://github.com/R0mb0/Always_on_mint/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/R0mb0/Always_on_mint/actions/workflows/pages/pages-build-deployment)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/R0mb0/GitHub_Studio_Insights)
+[![Open Source Love svg3](https://badges.frapsoft.com/os/v3/open-source.svg?v=103)](https://github.com/R0mb0/GitHub_Studio_Insights)
+[![MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/license/mit)
+[![Donate](https://img.shields.io/badge/PayPal-Donate%20to%20Author-blue.svg)](http://paypal.me/R0mb0)
 
 **Always on Mint** is a small, dependency-free **Bash toolkit** that keeps an **always-on Linux Mint, Ubuntu or Debian PC** healthy for months — the old laptop that runs your bots, the mini PC that hosts your scripts, the desktop that never sleeps. It **checks the machine every hour**, **cleans and backs it up every week**, **reboots it carefully** (and **refuses** when the PC might not start again), and **tells you when something is wrong**: on **Telegram**, with a **healthchecks.io** heartbeat, and out loud on the **laptop's own speakers**.
 
-<!-- badges -->
+<div align="center">
+  <a href="http://paypal.me/R0mb0">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/R0mb0/Support_the_dev_badge/blob/main/Badge/SVG/Support_the_dev_badge_Dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="https://github.com/R0mb0/Support_the_dev_badge/blob/main/Badge/SVG/Support_the_dev_badge_Light.svg">
+      <img alt="Saved you time? Support the dev" src="https://github.com/R0mb0/Support_the_dev_badge/blob/main/Badge/SVG/Support_the_dev_badge_Default.svg">
+    </picture>
+  </a>
+</div>
+
+</div>
+
+---
 
 > 🇮🇹 **Italiano:** [README.it.md](README.it.md)
 
@@ -550,3 +569,11 @@ Linux Mint's automatic updates are not turned back on: if you want them, use the
 Bug reports, ideas and pull requests are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Please report security problems privately, as explained in [SECURITY.md](SECURITY.md).
 
 Released under the [MIT License](LICENSE).
+
+<a href="https://github.com/R0mb0/Crafted_with_AI">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://github.com/R0mb0/Crafted_with_AI/blob/main/Badge/SVG/CraftedWithAIDark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://github.com/R0mb0/Crafted_with_AI/blob/main/Badge/SVG/NotMadeByAILight.svg">
+    <img alt="Not made by AI" src="https://github.com/R0mb0/Crafted_with_AI/blob/main/Badge/SVG/NotMadeByAIDefault.svg">
+  </picture>
+</a>
