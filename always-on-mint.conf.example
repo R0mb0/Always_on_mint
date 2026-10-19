@@ -1,0 +1,74 @@
+# Always on Mint — configuration. After installing it lives in /etc/always-on-mint.conf
+# Edit it with:   sudo nano /etc/always-on-mint.conf
+# Changes apply from the next check (nothing to restart), except REBOOT_SCHEDULE:
+# after changing it run   sudo aom schedule
+# This file can contain your Telegram token: do not share it.
+
+# Name of this PC in the alerts
+MACHINE_NAME="$(hostname)"
+
+# Language of messages and alerts: auto (the system language), en, it
+MESSAGES_LANGUAGE="auto"
+
+# -----------------------------------------------------------------------------
+# TELEGRAM — a message on your phone when something happens  (see README: "Telegram alerts")
+# -----------------------------------------------------------------------------
+# token: @BotFather gives it to you when you create a bot (e.g. 123456789:AAH...)
+# chat id: your numeric id (the README explains how to find it in one minute)
+TELEGRAM_TOKEN=""
+TELEGRAM_CHAT_ID=""
+
+# -----------------------------------------------------------------------------
+# HEALTHCHECKS.IO — know when the PC is DEAD  (see README: "healthchecks.io")
+# -----------------------------------------------------------------------------
+# Every hour the PC says "I'm alive". If it stops (off, frozen, does not boot any more)
+# healthchecks.io emails you. A dead PC cannot send messages by itself: this is the only
+# way to know. Create a check with period 1 hour and grace 1 hour, paste its ping URL here.
+HEALTHCHECKS_URL=""
+
+# -----------------------------------------------------------------------------
+# DESKTOP — notification, sound and voice on this PC (great on laptops)
+# -----------------------------------------------------------------------------
+DESKTOP_ALERTS="yes"     # yes | no : a notification on the screen of whoever is logged in
+ALERT_SOUND="yes"        # yes | no : an alarm sound (3 times for critical problems)
+ALERT_VOICE="critical"   # no | critical | all : the message read aloud
+# No sound and no voice in these hours (the notification still appears, silently).
+# What happened during the night is played once in the morning. Empty = never quiet.
+QUIET_HOURS="23-08"
+
+# -----------------------------------------------------------------------------
+# WEEKLY REBOOT  (systemd OnCalendar format; "off" to disable — not recommended)
+# -----------------------------------------------------------------------------
+# A reboot every week brings problems out while they are small, instead of all together
+# after 100 days. It only happens if the health check says it is safe.
+REBOOT_SCHEDULE="Sun *-*-* 05:10:00"
+# Before rebooting, wait (at most 60 minutes) until these programs have finished.
+# Words contained in their command line, separated by spaces. Example: "backup.py mybot"
+WAIT_FOR_PROCESSES=""
+
+# -----------------------------------------------------------------------------
+# THRESHOLDS
+# -----------------------------------------------------------------------------
+DISK_WARN=85                 # % of disk used: warning
+DISK_CRITICAL=95             # % of disk used: critical (no automatic reboot)
+MAX_DAYS_WITHOUT_REBOOT=10   # warn if the PC has not rebooted for longer
+MAX_DAYS_WITHOUT_UPDATE=40   # reminder: "time to run sudo aom update"
+
+# -----------------------------------------------------------------------------
+# WEEKLY CLEANUP
+# -----------------------------------------------------------------------------
+CLEAN_OLD_KERNELS="yes"      # remove old kernels (keeps the running one and the previous one)
+JOURNAL_MAX_SIZE="300M"      # maximum space for system logs
+
+# -----------------------------------------------------------------------------
+# WEEKLY BACKUP
+# -----------------------------------------------------------------------------
+# Always saved: the configuration (/etc, crontabs, user services, list of packages).
+# Add the folders of your bots and scripts, separated by spaces:
+#   BACKUP_PATHS="/home/me/bots /home/me/scripts"
+BACKUP_PATHS=""
+# A second copy outside the PC (USB stick, external disk, mounted network folder).
+# Empty = only in /var/backups/always-on-mint on the PC itself.
+#   BACKUP_COPY_TO="/media/me/BACKUP/always-on-mint"
+BACKUP_COPY_TO=""
+BACKUP_KEEP=4                # how many backups to keep

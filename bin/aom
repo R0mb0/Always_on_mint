@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# aom — Always on Mint. One command, many subcommands:  aom help
+AOM_LIB="${AOM_LIB:-/usr/local/lib/always-on-mint}"
+export AOM_LIB
+# shellcheck source=../lib/aom-common.sh
+. "$AOM_LIB/aom-common.sh"
+
+usage() {
+  L "Always on Mint $AOM_VERSION — keep an always-on Linux PC healthy
+
+  sudo aom check         health report now (also runs every hour by itself)
+  sudo aom status        what is scheduled, last report, alert settings
+  sudo aom test-alert    send a test alert: Telegram, notification, sound, voice
+  sudo aom update        update the system safely, then reboot while you are there
+  sudo aom clean         weekly cleanup, now
+  sudo aom backup        weekly backup, now
+  sudo aom reboot --dry-run   would the weekly reboot happen now? and why
+  sudo aom schedule      apply REBOOT_SCHEDULE after changing it
+       aom run --name NAME [--ping URL] [--minutes N] -- command ...
+                         run a script or bot and get an alert if it fails
+       aom version
+
+Configuration: /etc/always-on-mint.conf    Logs: /var/log/always-on-mint
+" "Always on Mint $AOM_VERSION — un PC Linux sempre acceso, in salute
+
+  sudo aom check         rapporto sulla salute, adesso (gira anche da solo ogni ora)
+  sudo aom status        cosa è programmato, ultimo rapporto, impostazioni degli avvisi
+  sudo aom test-alert    manda un avviso di prova: Telegram, notifica, suono, voce
+  sudo aom update        aggiorna il sistema in sicurezza, poi riavvia mentre sei lì
+  sudo aom clean         la pulizia settimanale, adesso
+  sudo aom backup        il backup settimanale, adesso
+  sudo aom reboot --dry-run   il riavvio settimanale si farebbe adesso? e perché
+  sudo aom schedule      applica REBOOT_SCHEDULE dopo averlo cambiato
+       aom run --name NOME [--ping URL] [--minutes N] -- comando ...
+                         fa girare uno script o un bot e ti avvisa se fallisce
+       aom version
+
+Configurazione: /etc/always-on-mint.conf    Log: /var/log/always-on-mint
+"
+}
+
+cmd="${1:-help}"
+[ $# -gt 0 ] && shift
+case "$cmd" in
+  check|status|test-alert|update|clean|backup|reboot|boot|schedule|run)
+    exec bash "$AOM_LIB/commands/$cmd.sh" "$@" ;;
+  version|--version|-v) echo "Always on Mint $AOM_VERSION" ;;
+  help|--help|-h) usage ;;
+  *) Lf "Unknown command: %s\n\n" "Comando sconosciuto: %s\n\n" "$cmd" >&2; usage >&2; exit 2 ;;
+esac

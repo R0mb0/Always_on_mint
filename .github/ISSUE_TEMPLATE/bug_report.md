@@ -11,19 +11,29 @@ assignees: ''
 A clear and concise description of what the bug is.
 
 **Steps to reproduce**
-Steps to reproduce the behavior:
 1. ...
 2. ...
 3. ...
 
 **Expected behavior**
-A clear and concise description of what you expected to happen.
+What you expected to happen.
 
-**Screenshots**
-If applicable, add screenshots to help explain the problem.
+**What `aom` says**
+Paste the output of these commands (remove anything private):
+
+```
+aom version
+sudo aom check
+sudo aom status
+```
 
 **Environment**
-Any relevant details about your setup (OS, version, browser, or anything else that might matter for this project).
+- Distribution and version (e.g. Linux Mint 22.1 Cinnamon / Xfce / MATE, Ubuntu 24.04...):
+- Laptop or desktop:
+- Did you change `/etc/always-on-mint.conf`? Which settings? (never paste your Telegram token)
+
+**Logs**
+If relevant, the last lines of the files in `/var/log/always-on-mint/` or of `journalctl -u aom-check -n 50`.
 
 **Additional context**
 Anything else useful to know.

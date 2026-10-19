@@ -19,7 +19,11 @@ Open an Issue using the feature request template. Describe the problem you're tr
 1. Fork the repository and create a branch for your change.
 2. Keep each pull request focused on a single reason for change — don't bundle unrelated fixes together.
 3. If your change relates to an existing Issue, reference it in the pull request description.
-4. Try to match the existing coding style and conventions used in the project.
+4. Try to match the existing coding style and conventions used in the project:
+   - plain Bash, no extra dependencies beyond what a stock Linux Mint has (or what `install.sh` installs);
+   - every message shown to the user exists in English **and** Italian, side by side: `L "english" "italiano"` (or `Lf` with a printf format);
+   - nothing that runs as root should be able to make the PC unbootable: when in doubt, do nothing and alert;
+   - the scripts must pass `shellcheck -x -S warning` (the GitHub Action checks it on every push).
 5. Describe **why** the change is needed, not just what it changes — this makes review much faster.
 6. Open the pull request using the provided template.
 
