@@ -1,10 +1,23 @@
 # shellcheck shell=bash
 # aom test-alert — sends a test alert through every channel, ignoring the quiet hours,
 # and tells you which ones work.
-#   sudo aom test-alert
+#   sudo aom test-alert          one alert
+#   sudo aom test-alert --ring   the alarm that rings until you stop it (even if ALERT_UNTIL_ACK=no)
 
 # shellcheck source=../aom-common.sh
 . "$AOM_LIB/aom-common.sh"
+if [ "${1:-}" = "--ring" ]; then
+  if [ -z "$(aom_sessions)" ]; then
+    L "Nobody is logged in to a graphical session: the alarm would wait for someone to log in." \
+      "Nessuno è collegato a una sessione grafica: l'allarme aspetterebbe che qualcuno entri."; echo
+    exit 1
+  fi
+  export AOM_FORCE_SOUND=1
+  aom_ring_start "$(L 'Test alarm' 'Allarme di prova')" "$(L 'This alarm rings until you stop it. This is only a test.' 'Questo allarme suona finché non lo fermi. È solo una prova.')"
+  Lf "🔔 The test alarm rings every %s seconds (quiet hours ignored).\n   Stop it by clicking \"Got it\" on the notification, or with:  aom ack\n" \
+     "🔔 L'allarme di prova suona ogni %s secondi (ore di silenzio ignorate).\n   Fermalo cliccando \"Ho visto\" sulla notifica, oppure con:  aom ack\n" "$ALERT_RING_EVERY"
+  exit 0
+fi
 ok()   { echo "  ✅ $1"; }
 nope() { echo "  ❌ $1"; }
 skip() { echo "  ➖ $1"; }
@@ -48,7 +61,10 @@ else
       else nope "$(L 'Voice: spd-say is missing: sudo apt install speech-dispatcher espeak-ng' 'Voce: manca spd-say: sudo apt install speech-dispatcher espeak-ng')"; fi
     else skip "$(L 'Voice: turned off (ALERT_VOICE)' 'Voce: disattivata (ALERT_VOICE)')"; fi
     if aom_quiet_now; then echo "  ℹ️ $(Lf 'Now it is quiet hours (%s): real alerts would stay silent until the morning' 'Adesso sono ore di silenzio (%s): gli avvisi veri resterebbero muti fino al mattino' "$QUIET_HOURS")"; fi
-    AOM_FORCE_SOUND=1 aom_desktop critical "$(L 'Test alert' 'Avviso di prova')" "$(L 'Always on Mint works. This is only a test.' 'Always on Mint funziona. Questa è solo una prova.')"
+    case "$ALERT_UNTIL_ACK" in
+      critical|all) echo "  ℹ️ $(Lf 'Real alerts (%s) ring every %ss until you stop them: try it with  sudo aom test-alert --ring' 'Gli avvisi veri (%s) suonano ogni %ss finché non li fermi: provalo con  sudo aom test-alert --ring' "$ALERT_UNTIL_ACK" "$ALERT_RING_EVERY")" ;;
+    esac
+    AOM_FORCE_SOUND=1 ALERT_UNTIL_ACK=no aom_desktop critical "$(L 'Test alert' 'Avviso di prova')" "$(L 'Always on Mint works. This is only a test.' 'Always on Mint funziona. Questa è solo una prova.')"
   fi
 fi
 echo

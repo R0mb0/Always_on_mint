@@ -10,6 +10,9 @@ AOM_CONF=/etc/always-on-mint.conf
 . lib/aom-common.sh
 aom_need_root bash uninstall.sh
 
+# stop any alarm that is ringing
+AOM_LIB="$PWD/lib" bash lib/commands/ack.sh >/dev/null 2>&1
+systemctl stop 'aom-ring-*' >/dev/null 2>&1
 for u in aom-check.timer aom-clean.timer aom-backup.timer aom-reboot.timer aom-boot.service; do
   systemctl disable --now "$u" >/dev/null 2>&1
 done

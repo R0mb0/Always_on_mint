@@ -187,6 +187,7 @@ if [ -n "$problems" ]; then
     echo "$key $now" > "$AOM_STATE/last-alert"
   fi
 elif [ -n "$prev_key" ]; then
+  aom_ring_stop    # the alarm of the health check stops by itself (the alarms of your scripts do not)
   aom_alert ok "$(L 'All good again' 'Tutto di nuovo a posto')" "$(L 'The problems reported before are gone.' 'I problemi segnalati prima sono spariti.')"
   rm -f "$AOM_STATE/last-alert"
 fi

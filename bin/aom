@@ -11,6 +11,8 @@ usage() {
   sudo aom check         health report now (also runs every hour by itself)
   sudo aom status        what is scheduled, last report, alert settings
   sudo aom test-alert    send a test alert: Telegram, notification, sound, voice
+  sudo aom test-alert --ring   test the alarm that rings until you stop it
+       aom ack           stop the alarm (\"I've seen it\")
   sudo aom update        update the system safely, then reboot while you are there
   sudo aom clean         weekly cleanup, now
   sudo aom backup        weekly backup, now
@@ -26,6 +28,8 @@ Configuration: /etc/always-on-mint.conf    Logs: /var/log/always-on-mint
   sudo aom check         rapporto sulla salute, adesso (gira anche da solo ogni ora)
   sudo aom status        cosa è programmato, ultimo rapporto, impostazioni degli avvisi
   sudo aom test-alert    manda un avviso di prova: Telegram, notifica, suono, voce
+  sudo aom test-alert --ring   prova l'allarme che suona finché non lo fermi
+       aom ack           ferma l'allarme (\"ho visto\")
   sudo aom update        aggiorna il sistema in sicurezza, poi riavvia mentre sei lì
   sudo aom clean         la pulizia settimanale, adesso
   sudo aom backup        il backup settimanale, adesso
@@ -42,7 +46,7 @@ Configurazione: /etc/always-on-mint.conf    Log: /var/log/always-on-mint
 cmd="${1:-help}"
 [ $# -gt 0 ] && shift
 case "$cmd" in
-  check|status|test-alert|update|clean|backup|reboot|boot|schedule|run)
+  check|status|test-alert|update|clean|backup|reboot|boot|schedule|run|ack)
     exec bash "$AOM_LIB/commands/$cmd.sh" "$@" ;;
   version|--version|-v) echo "Always on Mint $AOM_VERSION" ;;
   help|--help|-h) usage ;;

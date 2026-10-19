@@ -36,6 +36,7 @@ Always on Mint attacca ognuno di questi punti. Soprattutto, **riavvia una volta 
 - **Riavvio settimanale prudente**: prima di riavviare fa il controllo completo; se qualcosa potrebbe impedire al PC di ripartire, **non riavvia** e ti avvisa. Aspetta anche che finiscano i tuoi lavori.
 - **Avvisi che ti raggiungono**: messaggi **Telegram**, il "battito" su **healthchecks.io** (l'unico modo di sapere che il PC è *morto*) e, sul PC stesso, una **notifica**, un **suono di allarme** e una **voce** che legge il problema.
 - **Ore di silenzio**: niente suono né voce di notte; quello che è successo te lo dice la mattina.
+- **Un allarme che non si arrende** *(facoltativo)*: continua a suonare finché non clicchi **"Ho visto"**, lanci `aom ack`, o il problema sparisce.
 - **Niente spam**: un avviso quando nasce un problema, uno al giorno finché resta, e un messaggio quando torna tutto a posto.
 - **Pulizia settimanale**: cache dei pacchetti, kernel vecchi (tiene sempre quello in uso e il precedente), pacchetti orfani, log troppo grandi, vecchi rapporti di crash.
 - **Backup settimanale**: `/etc`, crontab, servizi utente, l'elenco dei pacchetti installati e le cartelle dei tuoi bot, con una seconda copia facoltativa su chiavetta.
@@ -224,7 +225,36 @@ ALERT_VOICE="critical"   # no | critical | all
 QUIET_HOURS="23-08"      # niente suono né voce dalle 23 alle 8 ("" = mai silenzio)
 ```
 
-Durante le **ore di silenzio** la notifica compare lo stesso, senza rumore. Quello che è successo di notte viene **suonato una volta al mattino**, al primo controllo dopo le ore di silenzio, come *"Durante la notte: ..."*.
+Durante le **ore di silenzio** la notifica compare lo stesso, senza rumore. Quello che è successo di notte viene **suonato una volta al mattino**, al primo controllo dopo le ore di silenzio, come *"Durante la notte: ..."*. Gli avvisi che arrivano quando nessuno è collegato (per esempio subito dopo un riavvio) aspettano il primo momento in cui c'è qualcuno a sentirli.
+
+### 🔔 Suonare finché qualcuno non interviene
+
+Un solo "bip" si perde facilmente se sei in un'altra stanza. Attiva l'allarme che **continua a suonare**:
+
+```bash
+ALERT_UNTIL_ACK="critical"    # no | critical | all
+ALERT_RING_EVERY=60           # secondi tra uno squillo e l'altro
+ALERT_RING_MAX_MINUTES=0      # si arrende dopo tanti minuti (0 = mai)
+```
+
+| Valore | Cosa suona finché non lo fermi |
+|---|---|
+| `no` | niente: un solo avviso, come descritto sopra |
+| `critical` | i problemi critici (⛔) e gli script lanciati con `aom run` che falliscono |
+| `all` | anche gli avvisi (⚠️) |
+
+L'allarme fa il suono ogni `ALERT_RING_EVERY` secondi (e legge il problema ad alta voce una volta su cinque). Si ferma quando:
+
+- clicchi **"Ho visto, ferma l'allarme"** sulla sua notifica;
+- lanci `aom ack` (non serve `sudo`);
+- il controllo orario trova che il problema è sparito (per gli allarmi del controllo);
+- sono passati `ALERT_RING_MAX_MINUTES` minuti, se hai messo un limite.
+
+Durante le **ore di silenzio** mostra la notifica e aspetta in silenzio; comincia a suonare quando finiscono. Se il giorno dopo il problema c'è ancora, il promemoria giornaliero lo fa ripartire.
+
+Provalo: `sudo aom test-alert --ring`, poi fermalo con il pulsante o con `aom ack`.
+
+> Il pulsante richiede un sistema di notifiche che lo supporti (Linux Mint 22 sì; sulle versioni più vecchie la notifica non ha il pulsante, ma `aom ack` funziona sempre).
 
 La voce parla la lingua del sistema (italiano o inglese). Se gli altoparlanti sono muti non si sente niente: per quello c'è Telegram.
 
@@ -406,6 +436,9 @@ Stanno tutte in `/etc/always-on-mint.conf`, ognuna spiegata nel file. Le modific
 | `ALERT_SOUND` | `yes` | Suono di allarme |
 | `ALERT_VOICE` | `critical` | `no`, `critical` o `all` |
 | `QUIET_HOURS` | `23-08` | Niente suono né voce in queste ore; `""` = mai silenzio |
+| `ALERT_UNTIL_ACK` | `no` | Continuare a suonare finché qualcuno non interviene: `no`, `critical` o `all` |
+| `ALERT_RING_EVERY` | `60` | Secondi tra uno squillo e l'altro |
+| `ALERT_RING_MAX_MINUTES` | `0` | Smette di suonare dopo tanti minuti; `0` = non si arrende mai |
 | `REBOOT_SCHEDULE` | `Sun *-*-* 05:10:00` | Quando fare il riavvio prudente ([formato systemd](https://www.freedesktop.org/software/systemd/man/systemd.time.html#Calendar%20Events)); `off` per disattivarlo (sconsigliato) |
 | `WAIT_FOR_PROCESSES` | — | Parole nella riga di comando dei programmi da aspettare prima di riavviare |
 | `DISK_WARN` / `DISK_CRITICAL` | `85` / `95` | Soglie del disco, in % |
@@ -427,6 +460,8 @@ Stanno tutte in `/etc/always-on-mint.conf`, ognuna spiegata nel file. Le modific
 | `sudo aom check` | Rapporto sulla salute, adesso |
 | `sudo aom status` | Lavori programmati, ultimo rapporto, impostazioni degli avvisi, ultimi backup |
 | `sudo aom test-alert` | Avviso di prova su tutti i canali (ignora le ore di silenzio) |
+| `sudo aom test-alert --ring` | Prova l'allarme che suona finché non lo fermi |
+| `aom ack` | Ferma l'allarme ("ho visto"); con `sudo`, tutti gli allarmi del PC |
 | `sudo aom update` | Aggiornamento sicuro, poi riavvio |
 | `sudo aom clean` | Pulizia, adesso |
 | `sudo aom backup` | Backup, adesso |

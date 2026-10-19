@@ -22,6 +22,9 @@ DESKTOP_ALERTS="yes"
 ALERT_SOUND="yes"
 ALERT_VOICE="critical"
 QUIET_HOURS="23-08"
+ALERT_UNTIL_ACK="no"
+ALERT_RING_EVERY=60
+ALERT_RING_MAX_MINUTES=0
 REBOOT_SCHEDULE="Sun *-*-* 05:10:00"
 WAIT_FOR_PROCESSES=""
 DISK_WARN=85
@@ -162,6 +165,11 @@ aom_say() { # user uid display text
 aom_desktop() {
   [ "$DESKTOP_ALERTS" = yes ] || return 0
   local level="$1" title="$2" body="$3" quiet=0 urgency=normal user uid display noisy=0
+  # ring until someone intervenes? (ALERT_UNTIL_ACK) — the alarm handles notification, sound,
+  # voice and quiet hours by itself, also when nobody is logged in yet
+  if aom_ring_wanted "$level"; then
+    aom_ring_start "$title" "$body" && return 0
+  fi
   aom_quiet_now && quiet=1
   [ "${AOM_FORCE_SOUND:-0}" = 1 ] && quiet=0
   [ "$level" = critical ] && urgency=critical
@@ -192,6 +200,61 @@ aom_replay_pending() {
   level=$(sed -n 1p "$f"); title=$(sed -n 2p "$f"); body=$(sed -n '3,$p' "$f")
   rm -f "$f"
   aom_desktop "$level" "$(L "During the night" "Durante la notte"): $title" "$body"
+}
+
+# ---------------------------------------------------------------- the alarm that rings until you intervene
+# ALERT_UNTIL_ACK: no | critical | all. The alarm runs as its own small background job
+# (lib/commands/ring.sh): it rings every ALERT_RING_EVERY seconds (silently during the quiet
+# hours) until you click "Got it" on the notification, run "aom ack", the problem goes away,
+# or ALERT_RING_MAX_MINUTES pass (0 = never give up).
+
+aom_ring_wanted() {
+  case "$ALERT_UNTIL_ACK" in
+    all) [ "$1" != info ] ;;
+    critical) [ "$1" = critical ] ;;
+    *) return 1 ;;
+  esac
+}
+
+# where the alarm keeps its state: /run/always-on-mint for root, your runtime folder otherwise
+aom_ring_dir() {
+  if [ "$(id -u)" -eq 0 ]; then echo "${AOM_RUN:-/run/always-on-mint}"
+  else echo "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/always-on-mint"; fi
+}
+
+aom_ring_running() { # dir
+  [ -r "$1/ringing.pid" ] && kill -0 "$(cat "$1/ringing.pid" 2>/dev/null)" 2>/dev/null
+}
+
+# aom_ring_start <title> <body>  — starts the alarm, or updates its message if it is already ringing
+aom_ring_start() {
+  local dir envs=()
+  dir=$(aom_ring_dir)
+  mkdir -p "$dir" 2>/dev/null || return 1
+  printf '%s\n%s\n' "$1" "$2" > "$dir/ringing.msg"
+  aom_ring_running "$dir" && return 0
+  rm -f "$dir/ack" "$dir"/action-*
+  date +%s > "$dir/ringing"
+  local v
+  for v in AOM_LIB AOM_CONF AOM_STATE AOM_LOG AOM_RUN AOM_FORCE_SOUND PATH; do
+    [ -n "${!v:-}" ] && envs+=("--setenv=$v=${!v}")
+  done
+  if [ "$(id -u)" -eq 0 ] && command -v systemd-run >/dev/null && [ -d /run/systemd/system ]; then
+    # its own service: the hourly check finishes, the alarm keeps ringing
+    systemd-run --quiet --collect --unit "aom-ring-$(date +%s)" "${envs[@]}" bash "$AOM_LIB/commands/ring.sh" "$dir" >/dev/null 2>&1 && return 0
+  fi
+  setsid nohup bash "$AOM_LIB/commands/ring.sh" "$dir" >/dev/null 2>&1 < /dev/null &
+  return 0
+}
+
+# aom_ring_stop [all]  — stops your own alarm; with "all" (and root) every alarm on the PC
+aom_ring_stop() {
+  local d
+  d=$(aom_ring_dir); mkdir -p "$d" 2>/dev/null && touch "$d/ack" 2>/dev/null
+  if [ "${1:-}" = all ] && [ "$(id -u)" -eq 0 ]; then
+    for d in /run/user/*/always-on-mint; do [ -d "$d" ] && touch "$d/ack"; done
+  fi
+  return 0
 }
 
 # ---------------------------------------------------------------- one alert: log + Telegram + desktop

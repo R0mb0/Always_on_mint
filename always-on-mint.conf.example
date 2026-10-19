@@ -35,6 +35,14 @@ ALERT_VOICE="critical"   # no | critical | all : the message read aloud
 # No sound and no voice in these hours (the notification still appears, silently).
 # What happened during the night is played once in the morning. Empty = never quiet.
 QUIET_HOURS="23-08"
+# Keep ringing until someone intervenes:  no | critical | all
+#   critical = critical problems and failed scripts ("aom run"); all = warnings too.
+# It rings every ALERT_RING_EVERY seconds and stops when you click "Got it" on the
+# notification, run  aom ack, the problem goes away, or after ALERT_RING_MAX_MINUTES
+# (0 = never give up). During the quiet hours it waits silently.
+ALERT_UNTIL_ACK="no"
+ALERT_RING_EVERY=60
+ALERT_RING_MAX_MINUTES=0
 
 # -----------------------------------------------------------------------------
 # WEEKLY REBOOT  (systemd OnCalendar format; "off" to disable — not recommended)

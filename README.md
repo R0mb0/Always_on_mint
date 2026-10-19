@@ -36,6 +36,7 @@ Always on Mint attacks each of these points. Above all, it **reboots once a week
 - **Careful weekly reboot**: before rebooting it runs the full check; if something could stop the PC from starting again, it **does not reboot** and alerts you. It also waits for your jobs to finish.
 - **Alerts that reach you**: **Telegram** messages, a **healthchecks.io** heartbeat (the only way to know that the PC is *dead*), and on the PC itself a **desktop notification**, an **alarm sound** and a **voice** reading the problem.
 - **Quiet hours**: no sound and no voice at night; what happened is played in the morning.
+- **An alarm that does not give up** *(optional)*: it keeps ringing until you click **"Got it"**, run `aom ack`, or the problem goes away.
 - **No spam**: an alert when a problem appears, once a day while it lasts, and a message when everything is fine again.
 - **Weekly cleanup**: package cache, old kernels (always keeping the running one and the previous one), orphan packages, oversized logs, old crash reports.
 - **Weekly backup**: `/etc`, crontabs, user services, the list of installed packages and the folders of your bots — with an optional second copy on a USB stick.
@@ -224,7 +225,36 @@ ALERT_VOICE="critical"   # no | critical | all
 QUIET_HOURS="23-08"      # no sound and no voice from 23:00 to 08:00 ("" = never quiet)
 ```
 
-During the **quiet hours** the notification still appears, silently. What happened during the night is **played once in the morning**, at the first check after the quiet hours, as *"During the night: ..."*.
+During the **quiet hours** the notification still appears, silently. What happened during the night is **played once in the morning**, at the first check after the quiet hours, as *"During the night: ..."*. Alerts that arrive while nobody is logged in (for example right after a reboot) wait for the first moment someone is there to hear them.
+
+### 🔔 Ring until someone intervenes
+
+A single beep is easy to miss if you are in another room. Turn on the alarm that **keeps ringing**:
+
+```bash
+ALERT_UNTIL_ACK="critical"    # no | critical | all
+ALERT_RING_EVERY=60           # seconds between rings
+ALERT_RING_MAX_MINUTES=0      # give up after this many minutes (0 = never)
+```
+
+| Value | What rings until you stop it |
+|---|---|
+| `no` | nothing: one alert, as described above |
+| `critical` | critical problems (⛔) and scripts started with `aom run` that fail |
+| `all` | warnings (⚠️) too |
+
+The alarm plays the sound every `ALERT_RING_EVERY` seconds (and reads the problem aloud every fifth time). It stops when:
+
+- you click **"Got it, stop the alarm"** on its notification;
+- you run `aom ack` (no `sudo` needed);
+- the hourly check finds that the problem is gone (for health-check alarms);
+- `ALERT_RING_MAX_MINUTES` have passed, if you set a limit.
+
+During the **quiet hours** it shows the notification and waits silently; it starts ringing when they end. If the problem is still there the next day, the daily reminder starts it again.
+
+Try it: `sudo aom test-alert --ring`, then stop it with the button or with `aom ack`.
+
+> The button needs a notification system that supports it (Linux Mint 22 does; on older versions the notification has no button, and `aom ack` always works).
 
 The voice speaks the system language (English or Italian). If the speakers are muted, nothing can be heard: Telegram is there for that.
 
@@ -406,6 +436,9 @@ All settings live in `/etc/always-on-mint.conf`, each one explained in the file.
 | `ALERT_SOUND` | `yes` | Alarm sound |
 | `ALERT_VOICE` | `critical` | `no`, `critical` or `all` |
 | `QUIET_HOURS` | `23-08` | No sound and voice in these hours; `""` = never quiet |
+| `ALERT_UNTIL_ACK` | `no` | Keep ringing until someone intervenes: `no`, `critical` or `all` |
+| `ALERT_RING_EVERY` | `60` | Seconds between rings |
+| `ALERT_RING_MAX_MINUTES` | `0` | Stop ringing after this many minutes; `0` = never give up |
 | `REBOOT_SCHEDULE` | `Sun *-*-* 05:10:00` | When the careful reboot happens ([systemd format](https://www.freedesktop.org/software/systemd/man/systemd.time.html#Calendar%20Events)); `off` to disable (not recommended) |
 | `WAIT_FOR_PROCESSES` | — | Words in the command line of programs to wait for before rebooting |
 | `DISK_WARN` / `DISK_CRITICAL` | `85` / `95` | Disk thresholds, % |
@@ -427,6 +460,8 @@ All settings live in `/etc/always-on-mint.conf`, each one explained in the file.
 | `sudo aom check` | Health report, now |
 | `sudo aom status` | Scheduled jobs, last report, alert settings, last backups |
 | `sudo aom test-alert` | Test alert on every channel (ignores the quiet hours) |
+| `sudo aom test-alert --ring` | Test the alarm that rings until you stop it |
+| `aom ack` | Stop the alarm ("I've seen it"); with `sudo`, every alarm on the PC |
 | `sudo aom update` | Safe update, then reboot |
 | `sudo aom clean` | Cleanup, now |
 | `sudo aom backup` | Backup, now |
