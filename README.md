@@ -1,5 +1,7 @@
 # 🛡️ Always on Mint
 
+[![pages-build-deployment](https://github.com/R0mb0/Always_on_mint/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/R0mb0/Always_on_mint/actions/workflows/pages/pages-build-deployment)
+
 **Always on Mint** is a small, dependency-free **Bash toolkit** that keeps an **always-on Linux Mint, Ubuntu or Debian PC** healthy for months — the old laptop that runs your bots, the mini PC that hosts your scripts, the desktop that never sleeps. It **checks the machine every hour**, **cleans and backs it up every week**, **reboots it carefully** (and **refuses** when the PC might not start again), and **tells you when something is wrong**: on **Telegram**, with a **healthchecks.io** heartbeat, and out loud on the **laptop's own speakers**.
 
 <!-- badges -->
