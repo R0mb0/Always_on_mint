@@ -53,6 +53,9 @@ DISK_WARN=85                 # % of disk used: warning
 DISK_CRITICAL=95             # % of disk used: critical (no automatic reboot)
 MAX_DAYS_WITHOUT_REBOOT=10   # warn if the PC has not rebooted for longer
 MAX_DAYS_WITHOUT_UPDATE=40   # reminder: "time to run sudo aom update"
+# Failed services NOT to report, separated by spaces. casper-md5check is a leftover of the
+# Linux Mint installer: it checks the installation USB stick and always fails afterwards.
+IGNORE_SERVICES="casper-md5check.service"
 
 # -----------------------------------------------------------------------------
 # WEEKLY CLEANUP

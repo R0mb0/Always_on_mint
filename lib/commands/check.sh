@@ -53,7 +53,8 @@ if command -v smartctl >/dev/null; then
     case "$d" in /dev/zram*|/dev/loop*|/dev/sr*) continue ;; esac
     out=$(smartctl -H -A "$d" 2>/dev/null); rc=$?
     (( rc & 2 )) && continue                       # cannot be read (USB stick...)
-    if (( rc & 8 )) || grep -q 'FAILED' <<<"$out"; then
+    # only the verdict line counts: the attribute table always has a column called WHEN_FAILED
+    if (( rc & 8 )) || grep -qE 'self-assessment test result: *FAILED|SMART Health Status: *(FAILED|.*FAILURE)' <<<"$out"; then
       crit "$(Lf 'Disk %s: SMART says it is FAILING. Back up now and replace it' 'Disco %s: SMART dice che si sta GUASTANDO. Fai subito un backup e cambialo' "$d")"
     fi
     (( rc & 16 )) && crit "$(Lf 'Disk %s: some SMART values are past the failure threshold' 'Disco %s: alcuni valori SMART hanno superato la soglia di guasto' "$d")"
@@ -109,7 +110,12 @@ done
 [ -e /var/run/reboot-required ] && note "$(L 'An update asks for a reboot (the weekly reboot will do it)' 'Un aggiornamento chiede un riavvio (lo farà il riavvio settimanale)')"
 
 # ---------- 7. failed services (system and users) ----------
-failed=$(systemctl --failed --no-legend --plain 2>/dev/null | awk '{print $1}' | tr '\n' ' ')
+# services known to fail harmlessly (IGNORE_SERVICES) are left out
+ignored() { local u="$1" i; for i in $IGNORE_SERVICES; do [ "$u" = "$i" ] && return 0; done; return 1; }
+failed=""
+for u in $(systemctl --failed --no-legend --plain 2>/dev/null | awk '{print $1}'); do
+  ignored "$u" || failed="$failed$u "
+done
 [ -n "${failed// /}" ] && warn "$(Lf 'Failed system services: %s' 'Servizi di sistema falliti: %s' "$failed")"
 for dir in /run/user/*; do
   [ -d "$dir" ] || continue

@@ -411,6 +411,7 @@ Stanno tutte in `/etc/always-on-mint.conf`, ognuna spiegata nel file. Le modific
 | `DISK_WARN` / `DISK_CRITICAL` | `85` / `95` | Soglie del disco, in % |
 | `MAX_DAYS_WITHOUT_REBOOT` | `10` | Avvisa se il PC non si riavvia da più giorni |
 | `MAX_DAYS_WITHOUT_UPDATE` | `40` | Promemoria per `aom update` |
+| `IGNORE_SERVICES` | `casper-md5check.service` | Servizi falliti da non segnalare (casper-md5check è un residuo innocuo dell'installatore di Mint) |
 | `CLEAN_OLD_KERNELS` | `yes` | Toglie i kernel vecchi e i pacchetti orfani |
 | `JOURNAL_MAX_SIZE` | `300M` | Tetto per i log di sistema |
 | `BACKUP_PATHS` | — | Cartelle da salvare, separate da spazi |

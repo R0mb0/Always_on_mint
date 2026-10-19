@@ -28,6 +28,8 @@ DISK_WARN=85
 DISK_CRITICAL=95
 MAX_DAYS_WITHOUT_REBOOT=10
 MAX_DAYS_WITHOUT_UPDATE=40
+# casper-md5check checks the installation USB stick at every boot and always fails on an installed system
+IGNORE_SERVICES="casper-md5check.service"
 CLEAN_OLD_KERNELS="yes"
 JOURNAL_MAX_SIZE="300M"
 BACKUP_PATHS=""
@@ -185,6 +187,8 @@ aom_replay_pending() {
   local f="$AOM_STATE/pending-sound" level title body
   [ -r "$f" ] || return 0
   aom_quiet_now && return 0
+  [ "$DESKTOP_ALERTS" = yes ] || return 0
+  [ -n "$(aom_sessions)" ] || return 0   # nobody to hear it yet: keep it for when someone logs in
   level=$(sed -n 1p "$f"); title=$(sed -n 2p "$f"); body=$(sed -n '3,$p' "$f")
   rm -f "$f"
   aom_desktop "$level" "$(L "During the night" "Durante la notte"): $title" "$body"
